@@ -1,0 +1,137 @@
+{
+  "entities": {
+    "User": {
+      "title": "User Profile",
+      "description": "Personal and academic information for the student user.",
+      "type": "object",
+      "properties": {
+        "uid": { "type": "string" },
+        "email": { "type": "string", "format": "email" },
+        "displayName": { "type": "string" },
+        "university": { "type": "string" },
+        "major": { "type": "string" },
+        "courses": { "type": "array", "items": { "type": "string" } },
+        "interests": { "type": "array", "items": { "type": "string" } },
+        "futureCareerGoals": { "type": "string" },
+        "startupInterests": { "type": "array", "items": { "type": "string" } },
+        "preferredIndustries": { "type": "array", "items": { "type": "string" } },
+        "onboardingCompleted": { "type": "boolean" },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["uid", "email"]
+    },
+    "Course": {
+      "title": "Course",
+      "description": "A university course being tracked.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "userId": { "type": "string" },
+        "title": { "type": "string" },
+        "semester": { "type": "string" },
+        "lecturer": { "type": "string" },
+        "progress": { "type": "number" },
+        "syllabusUrl": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["userId", "title"]
+    },
+    "Note": {
+      "title": "Note",
+      "description": "A lecture note or research entry.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "userId": { "type": "string" },
+        "courseId": { "type": "string" },
+        "date": { "type": "string", "format": "date" },
+        "topic": { "type": "string" },
+        "content": { "type": "string" },
+        "tags": { "type": "array", "items": { "type": "string" } },
+        "summary": { "type": "string" },
+        "businessInsights": { "type": "string" },
+        "type": { "type": "string", "enum": ["rich-text", "markdown", "voice"] },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["userId", "courseId", "topic"]
+    },
+    "BusinessIdea": {
+      "title": "Business Idea",
+      "description": "An entrepreneurial idea saved in the vault.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "userId": { "type": "string" },
+        "title": { "type": "string" },
+        "problem": { "type": "string" },
+        "solution": { "type": "string" },
+        "market": { "type": "string" },
+        "revenueModel": { "type": "string" },
+        "difficultyScore": { "type": "number" },
+        "opportunityScore": { "type": "number" },
+        "industry": { "type": "string" },
+        "relatedCourseId": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["userId", "title"]
+    },
+    "Reflection": {
+      "title": "Reflection",
+      "description": "Weekly reflection about learning and entrepreneurial growth.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "userId": { "type": "string" },
+        "date": { "type": "string", "format": "date" },
+        "content": { "type": "string" },
+        "learningPatterns": { "type": "string" },
+        "strongestTopics": { "type": "array", "items": { "type": "string" } },
+        "trends": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["userId", "date"]
+    },
+    "Flashcard": {
+      "title": "Flashcard",
+      "description": "Study flashcards generated from notes.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "userId": { "type": "string" },
+        "noteId": { "type": "string" },
+        "front": { "type": "string" },
+        "back": { "type": "string" },
+        "nextReview": { "type": "string", "format": "date-time" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["userId", "noteId", "front", "back"]
+    }
+  },
+  "firestore": {
+    "users": {
+      "schema": "User",
+      "description": "Collection of user profiles."
+    },
+    "courses": {
+      "schema": "Course",
+      "description": "Collection of courses."
+    },
+    "notes": {
+      "schema": "Note",
+      "description": "Collection of notes."
+    },
+    "businessIdeas": {
+      "schema": "BusinessIdea",
+      "description": "Collection of business ideas."
+    },
+    "reflections": {
+      "schema": "Reflection",
+      "description": "Collection of reflections."
+    },
+    "flashcards": {
+      "schema": "Flashcard",
+      "description": "Collection of flashcards."
+    }
+  }
+}

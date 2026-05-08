@@ -1,0 +1,106 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Default Deny
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // Helper Functions
+    function isSignedIn() { return request.auth != null; }
+    function isOwner(userId) { return isSignedIn() && request.auth.uid == userId; }
+    function incoming() { return request.resource.data; }
+    function existing() { return resource.data; }
+    function isValidId(id) { return id is string && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$'); }
+
+    // User Profile Validation
+    function isValidUser(data) {
+      return data.keys().hasAll(['uid', 'email']) &&
+             data.uid is string && data.uid.size() <= 128 &&
+             data.email is string && data.email.size() <= 256;
+    }
+
+    match /users/{userId} {
+      allow get: if isOwner(userId);
+      allow create: if isOwner(userId) && isValidUser(incoming()) && incoming().uid == request.auth.uid;
+      allow update: if isOwner(userId) && isValidUser(incoming()) &&
+                    incoming().uid == existing().uid &&
+                    incoming().email == existing().email &&
+                    incoming().diff(existing()).affectedKeys().hasOnly([
+                      'displayName', 'university', 'major', 'courses', 
+                      'interests', 'futureCareerGoals', 'startupInterests', 
+                      'preferredIndustries', 'onboardingCompleted', 'updatedAt'
+                    ]);
+    }
+
+    // Course Validation
+    function isValidCourse(data) {
+      return data.keys().hasAll(['userId', 'title']) &&
+             data.userId == request.auth.uid &&
+             data.title is string && data.title.size() <= 200;
+    }
+
+    match /courses/{courseId} {
+      allow list, get: if isSignedIn() && resource.data.userId == request.auth.uid;
+      allow create: if isSignedIn() && isValidCourse(incoming());
+      allow update: if isSignedIn() && isOwner(existing().userId) && isValidCourse(incoming()) &&
+                    incoming().userId == existing().userId &&
+                    incoming().diff(existing()).affectedKeys().hasOnly(['title', 'semester', 'lecturer', 'progress', 'syllabusUrl', 'updatedAt']);
+      allow delete: if isSignedIn() && isOwner(existing().userId);
+    }
+
+    // Note Validation
+    function isValidNote(data) {
+      return data.keys().hasAll(['userId', 'courseId', 'topic']) &&
+             data.userId == request.auth.uid &&
+             data.topic is string && data.topic.size() <= 200 &&
+             (data.courseId == 'General' || exists(/databases/$(database)/documents/courses/$(data.courseId)));
+    }
+
+    match /notes/{noteId} {
+      allow list, get: if isSignedIn() && resource.data.userId == request.auth.uid;
+      allow create: if isSignedIn() && isValidNote(incoming());
+      allow update: if isSignedIn() && isOwner(existing().userId) && isValidNote(incoming()) &&
+                    incoming().userId == existing().userId &&
+                    incoming().diff(existing()).affectedKeys().hasOnly(['topic', 'content', 'tags', 'summary', 'businessInsights', 'type', 'courseId', 'updatedAt']);
+      allow delete: if isSignedIn() && isOwner(existing().userId);
+    }
+
+    // Business Idea Validation
+    function isValidIdea(data) {
+      return data.keys().hasAll(['userId', 'title']) &&
+             data.userId == request.auth.uid &&
+             data.title is string && data.title.size() <= 200;
+    }
+
+    match /businessIdeas/{ideaId} {
+      allow list, get: if isSignedIn() && resource.data.userId == request.auth.uid;
+      allow create: if isSignedIn() && isValidIdea(incoming());
+      allow update: if isSignedIn() && isOwner(existing().userId) && isValidIdea(incoming()) &&
+                    incoming().userId == existing().userId &&
+                    incoming().diff(existing()).affectedKeys().hasOnly([
+                      'title', 'problem', 'solution', 'market', 'revenueModel', 
+                      'difficultyScore', 'opportunityScore', 'industry', 'relatedCourseId', 'updatedAt'
+                    ]);
+      allow delete: if isSignedIn() && isOwner(existing().userId);
+    }
+
+    // Flashcard Validation
+    function isValidFlashcard(data) {
+      return data.keys().hasAll(['userId', 'noteId', 'front', 'back']) &&
+             data.userId == request.auth.uid &&
+             data.front is string && data.front.size() <= 1000 &&
+             data.back is string && data.back.size() <= 1000 &&
+             exists(/databases/$(database)/documents/notes/$(data.noteId));
+    }
+
+    match /flashcards/{flashcardId} {
+      allow list, get: if isSignedIn() && resource.data.userId == request.auth.uid;
+      allow create: if isSignedIn() && isValidFlashcard(incoming());
+      allow update: if isSignedIn() && isOwner(existing().userId) && isValidFlashcard(incoming()) &&
+                    incoming().userId == existing().userId &&
+                    incoming().diff(existing()).affectedKeys().hasOnly(['front', 'back', 'nextReview', 'updatedAt']);
+      allow delete: if isSignedIn() && isOwner(existing().userId);
+    }
+  }
+}

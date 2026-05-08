@@ -1,0 +1,120 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&family=Space+Grotesk:wght@300..700&family=JetBrains+Mono:ital,wght@0,100..800;1,100..800&display=swap');
+@import "tailwindcss";
+
+@theme {
+  --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
+  --font-display: "Space Grotesk", sans-serif;
+  --font-mono: "JetBrains Mono", monospace;
+
+  --color-brand: #000000;
+  --color-surface: #ffffff;
+  --color-border: #e5e7eb;
+  --color-accent: #3b82f6;
+
+  --radius-xl: 1.5rem;
+  --radius-2xl: 2rem;
+}
+
+@layer base {
+  body {
+    @apply bg-zinc-50 text-zinc-900 antialiased selection:bg-zinc-900 selection:text-white;
+    font-feature-settings: "cv02", "cv03", "cv04", "cv11";
+  }
+}
+
+@layer components {
+  .glass {
+    background-color: rgba(255, 255, 255, 0.7);
+    backdrop-filter: blur(12px);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+  }
+  
+  .glass-dark {
+    background-color: rgba(24, 24, 27, 0.8);
+    backdrop-filter: blur(12px);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+  }
+
+  .premium-card {
+    background-color: rgba(255, 255, 255, 0.7);
+    backdrop-filter: blur(12px);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+    border-radius: var(--radius-2xl);
+    transition-property: all;
+    transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+    transition-duration: 300ms;
+  }
+  
+  .premium-card:hover {
+    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+    transform: translateY(-0.125rem);
+  }
+
+  .nav-link {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.75rem 1rem;
+    border-radius: 0.75rem;
+    color: var(--color-zinc-500);
+    transition-property: all;
+    transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+    transition-duration: 150ms;
+  }
+  
+  .nav-link:hover {
+    background-color: var(--color-zinc-100);
+    color: var(--color-zinc-900);
+  }
+
+  .nav-link-active {
+    background-color: var(--color-zinc-900);
+    color: var(--color-white);
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+  }
+  
+  .nav-link-active:hover {
+    background-color: var(--color-zinc-800);
+    color: var(--color-white);
+  }
+
+  .markdown-body h1 {
+    @apply text-2xl font-bold mb-4 mt-6 first:mt-0;
+  }
+  .markdown-body h2 {
+    @apply text-xl font-bold mb-3 mt-5;
+  }
+  .markdown-body h3 {
+    @apply text-lg font-bold mb-2 mt-4;
+  }
+  .markdown-body p {
+    @apply mb-4 leading-relaxed text-zinc-700;
+  }
+  .markdown-body ul {
+    @apply list-disc pl-5 mb-4 space-y-1;
+  }
+  .markdown-body ol {
+    @apply list-decimal pl-5 mb-4 space-y-1;
+  }
+  .markdown-body blockquote {
+    @apply border-l-4 border-zinc-200 pl-4 italic my-4 text-zinc-500;
+  }
+  .markdown-body code {
+    @apply bg-zinc-100 px-1.5 py-0.5 rounded font-mono text-sm text-zinc-900;
+  }
+  .markdown-body pre {
+    @apply bg-zinc-100 p-4 rounded-xl font-mono text-sm overflow-x-auto my-4;
+  }
+  .markdown-body pre code {
+    @apply bg-transparent p-0;
+  }
+  .markdown-body strong {
+    @apply font-bold text-zinc-900;
+  }
+  .markdown-body em {
+    @apply italic;
+  }
+}
