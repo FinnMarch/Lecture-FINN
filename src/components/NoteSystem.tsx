@@ -15,7 +15,9 @@ import {
   Lightbulb,
   X,
   Eye,
-  EyeOff
+  EyeOff,
+  Search,
+  ChevronRight
 } from 'lucide-react';
 import { db, auth, handleFirestoreError, OperationType } from '../lib/firebase';
 import { collection, query, where, onSnapshot, addDoc, doc, setDoc, deleteDoc, orderBy } from 'firebase/firestore';
@@ -52,11 +54,10 @@ export default function NoteSystem() {
       setNotes(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })));
     }, (error) => handleFirestoreError(error, OperationType.GET, 'notes'));
 
-    // Fetch courses for the dropdown
     const qCourses = query(collection(db, 'courses'), where('userId', '==', user.uid));
     const unsubscribeCourses = onSnapshot(qCourses, (snapshot) => {
       setCourses(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })));
-    });
+    }, (error) => handleFirestoreError(error, OperationType.GET, 'courses'));
 
     return () => {
       unsubscribe();
@@ -69,31 +70,27 @@ export default function NoteSystem() {
     setIsSaving(true);
     try {
       const user = auth.currentUser;
+      const payload = {
+        userId: user?.uid,
+        topic,
+        content,
+        courseId,
+        type: noteType,
+        tags: currentTags,
+        updatedAt: new Date().toISOString(),
+      };
+
       if (activeNote) {
-        // Clean payload: remove 'id' and only update permitted fields
         await setDoc(doc(db, 'notes', activeNote.id), {
-          userId: activeNote.userId,
+          ...payload,
           createdAt: activeNote.createdAt,
-          topic,
-          content,
-          courseId,
-          type: noteType,
-          tags: currentTags,
-          updatedAt: new Date().toISOString(),
         });
       } else {
-        await addDoc(collection(db, 'notes'), {
-          userId: user?.uid,
-          topic,
-          content,
-          courseId,
-          type: noteType,
-          tags: currentTags,
+        const newDoc = await addDoc(collection(db, 'notes'), {
+          ...payload,
           createdAt: new Date().toISOString(),
         });
-        setTopic('');
-        setContent('');
-        setCurrentTags([]);
+        setActiveNote({ id: newDoc.id, ...payload, createdAt: new Date().toISOString() });
       }
     } catch (err) {
       handleFirestoreError(err, OperationType.WRITE, 'notes');
@@ -124,8 +121,6 @@ export default function NoteSystem() {
     try {
       const summaryPrompt = `Summarize these lecture notes into concise bullet points. Also, generate entrepreneurial "Business Insights" based on these concepts.\n\nNotes:\n${content}`;
       const aiResult = await generateAIContent(summaryPrompt, "You are FounderOS AI, a smart assistant for business students.");
-      
-      // We append AI result to content for MVP simplicity
       setContent(prev => prev + "\n\n--- AI INSIGHTS ---\n" + aiResult);
     } catch (err) {
       console.error("AI Gen error", err);
@@ -154,7 +149,6 @@ export default function NoteSystem() {
       };
 
       const prompt = `Generate 5-8 high-quality study flashcards based on these notes. Focus on important terms and business applications.\n\nNotes:\n${content}`;
-
       const flashcards = await generateAIJSON(prompt, flashcardsSchema, "You are FounderOS AI expert in active recall.");
       
       if (Array.isArray(flashcards)) {
@@ -194,234 +188,271 @@ export default function NoteSystem() {
   };
 
   return (
-    <div className="flex-1 ml-72 flex h-screen bg-zinc-50 font-sans overflow-hidden">
-      {/* List Sidebar */}
-      <div className="w-80 border-r border-zinc-200 bg-white flex flex-col h-full">
-        <div className="p-6 border-b border-zinc-200 flex justify-between items-center">
-          <h2 className="text-xl font-display font-bold">Knowledge</h2>
-          <button 
-            onClick={() => {
-              setActiveNote(null);
-              setTopic('');
-              setContent('');
-              setCourseId('General');
-              setNoteType('Rich Text');
-              setCurrentTags([]);
-            }}
-            className="w-10 h-10 rounded-xl bg-zinc-900 text-white flex items-center justify-center hover:bg-zinc-800 transition-all font-bold"
-          >
-            <Plus className="w-5 h-5 font-bold" />
-          </button>
+    <div className="flex-1 ml-72 flex h-screen bg-zinc-50 overflow-hidden">
+      {/* Search & List Sidebar */}
+      <div className="w-96 border-r border-zinc-200/60 bg-zinc-50 flex flex-col h-full overflow-hidden">
+        <div className="p-10 pb-6">
+          <div className="flex justify-between items-end mb-8">
+            <div>
+              <h2 className="text-3xl font-display font-medium tracking-tighter text-zinc-900 leading-none mb-2">Intelligence <span className="font-serif italic font-bold">Base</span></h2>
+              <p className="text-[10px] font-mono font-bold uppercase tracking-widest text-zinc-400 leading-none">Knowledge Hub</p>
+            </div>
+            <button 
+              onClick={() => {
+                setActiveNote(null);
+                setTopic('');
+                setContent('');
+                setCourseId('General');
+                setNoteType('Rich Text');
+                setCurrentTags([]);
+              }}
+              className="w-10 h-10 rounded-2xl bg-zinc-900 text-white flex items-center justify-center hover:bg-zinc-800 transition-all shadow-xl shadow-zinc-900/10"
+            >
+              <Plus className="w-5 h-5" />
+            </button>
+          </div>
+          <div className="relative group">
+            <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-zinc-400 group-focus-within:text-zinc-900 transition-colors" />
+            <input 
+              className="ouro-input pl-10 py-3 text-xs"
+              placeholder="Search knowledge layer..."
+            />
+          </div>
         </div>
         
-        <div className="flex-1 overflow-y-auto px-4 py-2 space-y-2">
-          {notes.map((note) => {
-            const course = courses.find(c => c.id === note.courseId);
-            return (
-              <div
-                key={note.id}
-                onClick={() => {
-                  setActiveNote(note);
-                  setTopic(note.topic);
-                  setContent(note.content);
-                  setCourseId(note.courseId || 'General');
-                  setNoteType(note.type || 'Rich Text');
-                  setCurrentTags(note.tags || []);
-                }}
-                className={cn(
-                  "w-full text-left p-4 rounded-2xl transition-all group relative cursor-pointer",
-                  activeNote?.id === note.id ? "bg-zinc-900 text-white shadow-lg" : "hover:bg-zinc-100"
-                )}
-              >
-                <div className="flex justify-between items-start mb-1 pointer-events-none">
-                  <div className="flex flex-col gap-0.5">
-                    <span className="text-[10px] font-bold uppercase tracking-widest opacity-40">
-                      {note.courseId === 'General' ? 'General' : (course?.title || 'Unknown')}
-                    </span>
-                    <span className="text-[8px] font-bold uppercase tracking-tighter opacity-30">{note.type || 'Rich Text'}</span>
+        <div className="flex-1 overflow-y-auto px-6 py-2 pb-10 space-y-3 scrollbar-hide">
+          <AnimatePresence mode="popLayout">
+            {notes.map((note, index) => {
+              const course = courses.find(c => c.id === note.courseId);
+              return (
+                <motion.div
+                  layout
+                  key={note.id}
+                  initial={{ opacity: 0, scale: 0.95 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  exit={{ opacity: 0, scale: 0.95 }}
+                  transition={{ delay: index * 0.05 }}
+                  onClick={() => {
+                    setActiveNote(note);
+                    setTopic(note.topic);
+                    setContent(note.content);
+                    setCourseId(note.courseId || 'General');
+                    setNoteType(note.type || 'Rich Text');
+                    setCurrentTags(note.tags || []);
+                  }}
+                  className={cn(
+                    "p-6 rounded-[1.75rem] transition-all cursor-pointer group relative border",
+                    activeNote?.id === note.id 
+                      ? "bg-zinc-900 text-white border-zinc-900 shadow-2xl shadow-zinc-900/20" 
+                      : "bg-white border-transparent hover:border-zinc-200 shadow-sm"
+                  )}
+                >
+                  <div className="flex justify-between items-start mb-3">
+                    <div className="flex flex-col gap-1">
+                      <span className={cn(
+                        "text-[9px] font-mono font-bold uppercase tracking-widest",
+                        activeNote?.id === note.id ? "text-zinc-400" : "text-zinc-400"
+                      )}>
+                        {note.courseId === 'General' ? 'General Protocol' : (course?.title || 'Unknown Unit')}
+                      </span>
+                    </div>
+                    <span className="text-[10px] font-mono font-bold opacity-30">{formatDate(note.createdAt)}</span>
                   </div>
-                  <span className="text-[10px] font-bold opacity-40">{formatDate(note.createdAt)}</span>
-                </div>
-              <h4 className="text-sm font-bold truncate mb-1 pr-6 pointer-events-none">{note.topic}</h4>
-              <p className={cn("text-xs line-clamp-2 leading-relaxed opacity-60 pointer-events-none", activeNote?.id === note.id ? "text-zinc-300" : "text-zinc-500")}>
-                {note.content}
-              </p>
-
-              <div className="flex gap-1 flex-wrap mt-2 pointer-events-none">
-                {note.tags?.slice(0, 3).map((tag: string) => (
-                  <span key={tag} className={cn(
-                    "px-1.5 py-0.5 rounded text-[8px] font-bold uppercase tracking-tighter",
-                    activeNote?.id === note.id ? "bg-white/10 text-zinc-400" : "bg-zinc-100 text-zinc-500"
+                  <h4 className="text-sm font-display font-bold truncate mb-2 leading-tight tracking-tight">{note.topic || 'Untitled Intel'}</h4>
+                  <p className={cn(
+                    "text-xs line-clamp-2 leading-relaxed h-8 mb-4", 
+                    activeNote?.id === note.id ? "text-zinc-400 font-medium" : "text-zinc-500 font-medium"
                   )}>
-                    {tag}
-                  </span>
-                ))}
-                {note.tags?.length > 3 && (
-                  <span className="text-[8px] font-bold opacity-40">+{note.tags.length - 3}</span>
-                )}
-              </div>
-              
-              <button 
-                onClick={(e) => {
-                  e.stopPropagation();
-                  handleDelete(note.id);
-                }}
-                className="absolute right-4 bottom-4 p-1.5 rounded-lg opacity-0 group-hover:opacity-100 hover:bg-red-500 hover:text-white transition-all z-20"
-              >
-                <Trash2 className="w-3.5 h-3.5" />
-              </button>
-            </div>
-            );
-          })}
+                    {note.content}
+                  </p>
+
+                  <div className="flex gap-1.5 flex-wrap">
+                    {note.tags?.slice(0, 2).map((tag: string) => (
+                      <span key={tag} className={cn(
+                        "px-2.5 py-1 rounded-full text-[8px] font-mono font-bold uppercase tracking-widest",
+                        activeNote?.id === note.id ? "bg-white/10 text-zinc-300" : "bg-zinc-100 text-zinc-500"
+                      )}>
+                        {tag}
+                      </span>
+                    ))}
+                    {note.tags?.length > 2 && (
+                      <span className="text-[9px] font-mono font-bold opacity-30 flex items-center">+{note.tags.length - 2}</span>
+                    )}
+                  </div>
+                  
+                  <button 
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleDelete(note.id);
+                    }}
+                    className="absolute right-4 top-4 p-2 rounded-xl opacity-0 group-hover:opacity-100 hover:bg-red-500/10 hover:text-red-500 transition-all z-20"
+                  >
+                    <Trash2 className="w-3.5 h-3.5" />
+                  </button>
+                </motion.div>
+              );
+            })}
+          </AnimatePresence>
         </div>
       </div>
 
-      {/* Editor Area */}
-      <div className="flex-1 flex flex-col h-full bg-white">
-        <header className="p-8 border-b border-zinc-100 flex justify-between items-center bg-white sticky top-0 z-10">
-          <div className="flex flex-col gap-3 w-full max-w-2xl">
-            <div className="flex gap-2">
-              {['Rich Text', 'Markdown', 'Voice'].map((type) => (
-                <button
-                  key={type}
-                  onClick={() => setNoteType(type)}
-                  className={cn(
-                    "px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider transition-all",
-                    noteType === type 
-                      ? "bg-zinc-900 text-white shadow-md shadow-zinc-900/10" 
-                      : "bg-zinc-100 text-zinc-400 hover:bg-zinc-200"
-                  )}
-                >
-                  {type}
-                </button>
-              ))}
-            </div>
-            <input 
-              value={topic}
-              onChange={(e) => setTopic(e.target.value)}
-              placeholder="Thesis Topic / Lecture Name"
-              className="text-3xl font-display font-bold text-zinc-900 focus:outline-none placeholder:text-zinc-100 bg-transparent"
-            />
-            <div className="flex items-center gap-4 text-xs font-bold text-zinc-400">
-               <select 
-                value={courseId}
-                onChange={(e) => setCourseId(e.target.value)}
-                className="bg-zinc-50 px-3 py-1.5 rounded-lg border-none focus:ring-2 focus:ring-zinc-900 transition-all font-mono uppercase tracking-widest appearance-none cursor-pointer"
-              >
-                <option value="General">GENERAL PROTOCOL</option>
-                {courses.map(course => (
-                  <option key={course.id} value={course.id}>{course.title}</option>
+      {/* Modern Editor Area */}
+      <div className="flex-1 flex flex-col h-full bg-white relative">
+        <header className="px-12 py-8 flex justify-between items-center bg-white/80 backdrop-blur-md sticky top-0 z-10 border-b border-zinc-100/50">
+          <div className="flex flex-col gap-6 w-full max-w-4xl">
+            <div className="flex justify-between items-center">
+              <div className="flex gap-2 p-1.5 bg-zinc-100/50 rounded-2xl border border-zinc-100">
+                {['Rich Text', 'Markdown', 'Voice'].map((type) => (
+                  <button
+                    key={type}
+                    onClick={() => setNoteType(type)}
+                    className={cn(
+                      "px-4 py-2 rounded-xl text-[10px] font-mono font-bold uppercase tracking-widest transition-all",
+                      noteType === type 
+                        ? "bg-white text-zinc-900 shadow-sm" 
+                        : "text-zinc-400 hover:text-zinc-600 hover:bg-zinc-200/50"
+                    )}
+                  >
+                    {type}
+                  </button>
                 ))}
-              </select>
-              <div className="h-3 w-px bg-zinc-200" />
+              </div>
               
-              <div className="flex items-center gap-2 flex-wrap max-w-md bg-zinc-50/50 p-1.5 rounded-xl border border-zinc-100 min-w-[200px]">
-                <Tag className="w-3.5 h-3.5 text-zinc-400 shrink-0 ml-1" />
-                <div className="flex items-center gap-1.5 flex-wrap">
-                  <AnimatePresence>
-                    {currentTags.map(tag => (
-                      <motion.span
-                        initial={{ opacity: 0, scale: 0.8 }}
-                        animate={{ opacity: 1, scale: 1 }}
-                        exit={{ opacity: 0, scale: 0.8 }}
-                        key={tag}
-                        className="px-2 py-0.5 bg-zinc-900 text-white rounded-md text-[9px] font-bold flex items-center gap-1 group shadow-sm shadow-zinc-900/10"
-                      >
-                        {tag}
-                        <button onClick={() => removeTag(tag)} className="hover:text-red-400 transition-colors">
-                          <X className="w-2.5 h-2.5" />
-                        </button>
-                      </motion.span>
-                    ))}
-                  </AnimatePresence>
-                  <input
-                    value={tagInput}
-                    onChange={(e) => setTagInput(e.target.value)}
-                    onKeyDown={handleAddTag}
-                    placeholder="+ Add Tag"
-                    className="bg-transparent border-none focus:outline-none placeholder:text-zinc-300 w-24 text-[10px] font-bold"
-                  />
+              <div className="flex items-center gap-2">
+                <AnimatePresence>
+                  {isSaving && (
+                    <motion.div 
+                      initial={{ opacity: 0, x: 10 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      exit={{ opacity: 0 }}
+                      className="text-[10px] font-mono font-bold text-zinc-300 animate-pulse tracking-widest uppercase mr-4"
+                    >
+                      Syncing...
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+                <div className="flex items-center gap-3">
+                  <button 
+                    onClick={handleGenerateAI}
+                    disabled={isGenerating || !content}
+                    className="ouro-button-secondary py-2 h-11 px-6 shadow-none flex items-center gap-2 group"
+                  >
+                    <Sparkles className={cn("w-3.5 h-3.5", isGenerating && "animate-pulse")} />
+                    <span className="font-mono">AI ANALYZE</span>
+                  </button>
+                  <button 
+                    onClick={handleGenerateFlashcards}
+                    disabled={isGeneratingFlashcards || !activeNote || !content}
+                    className="ouro-button-secondary py-2 h-11 px-6 shadow-none flex items-center gap-2 group"
+                  >
+                    <Brain className={cn("w-3.5 h-3.5", isGeneratingFlashcards && "animate-pulse")} />
+                    <span className="font-mono text-[9px]">EXTRACT RECALL</span>
+                  </button>
+                  <button 
+                    onClick={handleSave}
+                    disabled={isSaving || !topic || !content}
+                    className="ouro-button h-11 px-8"
+                  >
+                    <Save className="w-4 h-4" />
+                    SAVE
+                  </button>
                 </div>
               </div>
-
-              <div className="h-3 w-px bg-zinc-200" />
-              <span className="flex items-center gap-1.5"><Clock className="w-4 h-4" /> AUTO-SAVE ACTIVE</span>
             </div>
-          </div>
-          
-          <div className="flex items-center gap-3">
-             <button 
-              onClick={handleGenerateAI}
-              disabled={isGenerating || !content}
-              className="px-5 py-2.5 bg-zinc-50 border border-zinc-200 text-zinc-900 rounded-xl text-xs font-bold flex items-center gap-2 hover:border-zinc-900 disabled:opacity-50 transition-all font-mono"
-            >
-              <Sparkles className={cn("w-4 h-4", isGenerating && "animate-pulse")} />
-              {isGenerating ? "NEURAL SYNC..." : "AI ANALYZE"}
-            </button>
-            <button 
-              onClick={handleGenerateFlashcards}
-              disabled={isGeneratingFlashcards || !activeNote || !content}
-              className="px-5 py-2.5 bg-zinc-50 border border-zinc-200 text-zinc-900 rounded-xl text-xs font-bold flex items-center gap-2 hover:border-zinc-900 disabled:opacity-50 transition-all font-mono"
-            >
-              <Brain className={cn("w-4 h-4", isGeneratingFlashcards && "animate-pulse")} />
-              {isGeneratingFlashcards ? "EXTRACTING..." : "GEN FLASHCARDS"}
-            </button>
-            <button 
-              onClick={handleSave}
-              disabled={isSaving || !topic || !content}
-              className="px-6 py-2.5 bg-zinc-900 text-white rounded-xl text-xs font-bold flex items-center gap-2 hover:bg-zinc-800 disabled:opacity-50 transition-all shadow-lg shadow-zinc-900/10"
-            >
-              <Save className="w-4 h-4" />
-              SAVE COMMIT
-            </button>
+
+            <div className="space-y-4">
+              <input 
+                value={topic}
+                onChange={(e) => setTopic(e.target.value)}
+                placeholder="Entry Designation"
+                className="w-full text-5xl font-display font-medium text-zinc-900 focus:outline-none placeholder:text-zinc-50 bg-transparent tracking-tighter leading-tight"
+              />
+              <div className="flex items-center gap-4 text-xs">
+                <div className="relative">
+                  <select 
+                    value={courseId}
+                    onChange={(e) => setCourseId(e.target.value)}
+                    className="bg-zinc-50 px-4 py-2 pr-10 rounded-xl border border-zinc-100 focus:ring-2 focus:ring-zinc-900/5 transition-all font-mono text-[10px] uppercase font-bold tracking-widest appearance-none cursor-pointer hover:bg-zinc-100"
+                  >
+                    <option value="General">UNALIGNED PROTOCOL</option>
+                    {courses.map(course => (
+                      <option key={course.id} value={course.id}>{course.title}</option>
+                    ))}
+                  </select>
+                  <ChevronRight className="absolute right-3 top-1/2 -translate-y-1/2 w-3 h-3 text-zinc-400 rotate-90 pointer-events-none" />
+                </div>
+                
+                <div className="flex items-center gap-2 bg-zinc-50 border border-zinc-100 px-4 py-1.5 rounded-xl min-w-[200px]">
+                  <Tag className="w-3.5 h-3.5 text-zinc-400 shrink-0" />
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <AnimatePresence>
+                      {currentTags.map(tag => (
+                        <motion.span
+                          initial={{ opacity: 0, scale: 0.8 }}
+                          animate={{ opacity: 1, scale: 1 }}
+                          exit={{ opacity: 0, scale: 0.8 }}
+                          key={tag}
+                          className="px-2 py-0.5 bg-zinc-900 text-white rounded-md text-[9px] font-mono font-bold flex items-center gap-1 group shadow-lg shadow-zinc-900/10"
+                        >
+                          {tag}
+                          <button onClick={() => removeTag(tag)} className="hover:text-red-400 transition-colors">
+                            <X className="w-2.5 h-2.5" />
+                          </button>
+                        </motion.span>
+                      ))}
+                    </AnimatePresence>
+                    <input
+                      value={tagInput}
+                      onChange={(e) => setTagInput(e.target.value)}
+                      onKeyDown={handleAddTag}
+                      placeholder="+ Label"
+                      className="bg-transparent border-none focus:outline-none placeholder:text-zinc-400 w-20 text-[10px] font-mono font-bold uppercase tracking-widest"
+                    />
+                  </div>
+                </div>
+              </div>
+            </div>
           </div>
         </header>
 
-        <main className="flex-1 overflow-y-auto p-12">
+        <main className="flex-1 overflow-hidden relative">
           <div className={cn(
-            "mx-auto h-full transition-all duration-500", 
-            (noteType === 'Markdown' && showPreview) ? "max-w-7xl grid grid-cols-2 gap-12" : "max-w-3xl"
+            "h-full transition-all duration-500 overflow-y-auto px-12 py-12 scrollbar-hide", 
+            (noteType === 'Markdown' && showPreview) ? "max-w-[120rem] grid grid-cols-2 gap-20" : "max-w-5xl mx-auto"
           )}>
-            <div className="relative h-full">
+            <div className="relative group min-h-screen">
               <textarea 
                 value={content}
                 onChange={(e) => setContent(e.target.value)}
-                placeholder="Begin knowledge capture... Use markdown for structure."
-                className="w-full h-full text-zinc-800 text-lg leading-relaxed focus:outline-none resize-none placeholder:text-zinc-100 font-sans border-none"
+                placeholder="Initialize session. Documentation begins here."
+                className="w-full min-h-[80vh] text-zinc-800 text-xl leading-[1.6] focus:outline-none resize-none placeholder:text-zinc-50 font-sans border-none bg-transparent"
               />
               {noteType === 'Markdown' && (
                 <button 
                   onClick={() => setShowPreview(!showPreview)}
-                  className="absolute bottom-4 right-4 p-2 bg-white border border-zinc-200 rounded-lg text-zinc-400 hover:text-zinc-900 shadow-sm"
+                  className="fixed bottom-10 right-10 p-4 bg-zinc-900 text-white rounded-2xl shadow-2xl hover:bg-zinc-800 transition-all z-50 group"
                 >
-                  {showPreview ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                  {showPreview ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                  <div className="absolute right-full mr-4 top-1/2 -translate-y-1/2 px-3 py-1.5 bg-zinc-900 text-[10px] font-mono font-bold rounded-lg opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none">
+                    TOGGLE PREVIEW
+                  </div>
                 </button>
               )}
             </div>
             
             {noteType === 'Markdown' && showPreview && (
-              <div className="markdown-body h-full border-l border-zinc-100 pl-12 overflow-y-auto prose prose-zinc max-w-none prose-h1:text-2xl prose-h2:text-xl prose-p:leading-relaxed">
-                <Markdown>{content || '_Live preview will manifest here..._'}</Markdown>
-              </div>
+              <motion.div 
+                initial={{ opacity: 0, x: 20 }}
+                animate={{ opacity: 1, x: 0 }}
+                className="markdown-body h-full border-l border-zinc-100/50 pl-20 overflow-y-auto pb-40"
+              >
+                <Markdown>{content || '_Intelligence layer awaiting input..._'}</Markdown>
+              </motion.div>
             )}
           </div>
         </main>
-
-        <footer className="p-6 border-t border-zinc-100 bg-zinc-50 flex gap-4 overflow-x-auto no-scrollbar">
-          <div className="flex items-center gap-2 px-4 py-2 bg-white border border-zinc-200 rounded-xl text-xs font-bold whitespace-nowrap shadow-sm">
-            <Brain className="w-4 h-4" /> Summary Layer
-          </div>
-          <div className="flex items-center gap-2 px-4 py-2 bg-white border border-zinc-200 rounded-xl text-xs font-bold whitespace-nowrap shadow-sm">
-            <Lightbulb className="w-4 h-4" /> Venture Insights
-          </div>
-          <div className="flex items-center gap-2 px-4 py-2 bg-white border border-zinc-200 rounded-xl text-xs font-bold whitespace-nowrap shadow-sm">
-            <Tag className="w-4 h-4" /> Multi-Tagging
-          </div>
-          <div className="flex items-center gap-2 px-4 py-2 bg-white border border-zinc-200 rounded-xl text-xs font-bold whitespace-nowrap shadow-sm">
-            <BookOpen className="w-4 h-4" /> Flashcards
-          </div>
-        </footer>
       </div>
     </div>
   );
 }
+

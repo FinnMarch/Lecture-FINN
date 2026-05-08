@@ -13,7 +13,7 @@ import {
   FileText
 } from 'lucide-react';
 import { db, auth, handleFirestoreError, OperationType } from '../lib/firebase';
-import { collection, query, where, onSnapshot, addDoc, deleteDoc, doc, orderBy } from 'firebase/firestore';
+import { collection, query, where, onSnapshot, addDoc, deleteDoc, doc, orderBy, updateDoc } from 'firebase/firestore';
 import { cn } from '../lib/utils';
 
 export default function CourseSystem() {
@@ -70,11 +70,21 @@ export default function CourseSystem() {
     }
   };
 
+  const handleProgressUpdate = async (id: string, newProgress: number) => {
+    try {
+      await updateDoc(doc(db, 'courses', id), {
+        progress: newProgress,
+      });
+    } catch (err) {
+      handleFirestoreError(err, OperationType.UPDATE, `courses/${id}`);
+    }
+  };
+
   return (
     <div className="flex-1 ml-72 p-10 bg-zinc-50 font-sans min-h-screen">
       <header className="flex justify-between items-center mb-12">
         <div>
-          <h1 className="text-4xl font-display font-bold text-zinc-900 mb-2">Academia</h1>
+          <h1 className="text-4xl font-display font-medium text-zinc-900 mb-2 tracking-tighter">Academic <span className="font-serif italic font-bold">Protocol</span></h1>
           <p className="text-zinc-500 font-medium tracking-tight">Structured course management and curriculum monitoring.</p>
         </div>
         <button 
@@ -109,7 +119,7 @@ export default function CourseSystem() {
                 </button>
               </div>
 
-              <h3 className="text-xl font-display font-bold text-zinc-900 mb-2">{course.title}</h3>
+              <h3 className="text-xl font-display font-bold text-zinc-900 mb-2 tracking-tight">{course.title}</h3>
               <div className="space-y-2 mb-8">
                 <div className="flex items-center gap-2 text-xs font-bold text-zinc-400">
                   <User className="w-3.5 h-3.5" /> {course.lecturer || 'TBA'}
@@ -119,16 +129,31 @@ export default function CourseSystem() {
                 </div>
               </div>
 
-              <div className="space-y-2">
-                <div className="flex justify-between text-[10px] font-bold uppercase tracking-widest text-zinc-400">
-                  <span>Syllabus Absorption</span>
+              <div className="space-y-4">
+                <div className="flex justify-between text-[10px] font-mono font-bold uppercase tracking-[0.2em] text-zinc-400 group-hover:text-zinc-900 transition-colors">
+                  <span>Absorption Rate</span>
                   <span>{course.progress}%</span>
                 </div>
-                <div className="w-full h-1.5 bg-zinc-100 rounded-full overflow-hidden">
-                  <div 
-                    className="h-full bg-zinc-900 transition-all duration-1000" 
-                    style={{ width: `${course.progress}%` }} 
+                <div className="relative group/progress">
+                  <input 
+                    type="range"
+                    min="0"
+                    max="100"
+                    value={course.progress}
+                    onChange={(e) => handleProgressUpdate(course.id, parseInt(e.target.value))}
+                    className="absolute inset-0 w-full h-1.5 opacity-0 cursor-pointer z-10"
                   />
+                  <div className="w-full h-1.5 bg-zinc-100 rounded-full overflow-hidden">
+                    <motion.div 
+                      className="h-full bg-zinc-900 group-hover:bg-blue-500 transition-all" 
+                      initial={{ width: 0 }}
+                      animate={{ width: `${course.progress}%` }}
+                      transition={{ duration: 0.8, ease: "easeOut" }}
+                    />
+                  </div>
+                  <div className="absolute top-4 left-0 right-0 opacity-0 group-hover/progress:opacity-100 transition-opacity text-[8px] font-mono font-bold text-zinc-300 text-center uppercase tracking-widest">
+                    Slide to adjust protocol absorption
+                  </div>
                 </div>
               </div>
 

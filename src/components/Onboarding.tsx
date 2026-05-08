@@ -88,122 +88,137 @@ export default function Onboarding() {
   const Icon = currentStep.icon;
 
   return (
-    <div className="min-h-screen bg-zinc-50 flex flex-col items-center justify-center p-6 font-sans">
-      <div className="w-full max-w-xl">
+    <div className="min-h-screen bg-zinc-50 flex flex-col items-center justify-center p-6 font-sans overflow-hidden relative">
+      {/* Background blobs */}
+      <div className="absolute top-0 left-0 w-full h-full pointer-events-none overflow-hidden">
+        <div className="absolute top-[-10%] right-[-10%] w-[60%] h-[60%] bg-blue-100/20 blur-[150px] rounded-full" />
+        <div className="absolute bottom-[-10%] left-[-10%] w-[50%] h-[50%] bg-purple-100/10 blur-[150px] rounded-full" />
+      </div>
+
+      <div className="w-full max-w-xl relative z-10">
         <div className="mb-12">
-          <div className="flex justify-between items-center mb-4">
-            <h2 className="text-sm font-semibold uppercase tracking-[0.2em] text-zinc-400">Step {step + 1} of {STEPS.length}</h2>
-            <div className="flex gap-1">
+          <div className="flex justify-between items-center mb-6">
+            <p className="text-[10px] font-mono font-bold uppercase tracking-[0.4em] text-zinc-400">Step {step + 1} // {STEPS.length}</p>
+            <div className="flex gap-1.5">
               {STEPS.map((_, i) => (
                 <div 
                   key={i} 
                   className={cn(
-                    "w-8 h-1 rounded-full transition-all duration-500",
+                    "w-12 h-1 rounded-full transition-all duration-700",
                     i <= step ? "bg-zinc-900" : "bg-zinc-200"
                   )}
                 />
               ))}
             </div>
           </div>
-          <div className="flex items-center gap-4">
-            <div className="w-12 h-12 rounded-2xl bg-white shadow-xl flex items-center justify-center border border-zinc-100">
-              <Icon className="w-6 h-6 text-zinc-900" />
+          <motion.div 
+            key={currentStep.id + "-title"}
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="flex items-center gap-6"
+          >
+            <div className="w-16 h-16 rounded-[1.5rem] bg-white shadow-2xl flex items-center justify-center border border-zinc-100/50">
+              <Icon className="w-8 h-8 text-zinc-900" />
             </div>
-            <h1 className="text-3xl font-display font-bold text-zinc-900">{currentStep.title}</h1>
-          </div>
+            <div>
+              <h1 className="text-4xl font-display font-medium text-zinc-900 tracking-tighter leading-tight italic font-serif group-hover:not-italic transition-all">{currentStep.title}</h1>
+              <p className="text-[10px] font-mono font-bold uppercase tracking-[0.2em] text-zinc-400 mt-1">Initialization Phase</p>
+            </div>
+          </motion.div>
         </div>
 
         <motion.div 
           key={step}
-          initial={{ opacity: 0, x: 20 }}
-          animate={{ opacity: 1, x: 0 }}
-          exit={{ opacity: 0, x: -20 }}
-          className="premium-card p-10 bg-white border border-zinc-200 shadow-2xl rounded-[2.5rem]"
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          exit={{ opacity: 0, y: -20 }}
+          transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
+          className="glass p-10 border border-white shadow-[0_32px_64px_-16px_rgba(0,0,0,0.08)] rounded-[3rem]"
         >
-          <div className="space-y-8">
+          <div className="space-y-10">
             {step === 0 && (
-              <>
-                <div>
-                  <label className="block text-xs font-bold uppercase tracking-widest text-zinc-400 mb-3">University Name</label>
+              <div className="space-y-8">
+                <div className="group">
+                  <label className="block text-[10px] font-mono font-bold uppercase tracking-widest text-zinc-400 mb-4 ml-1 group-focus-within:text-zinc-900 transition-colors">University Name</label>
                   <input 
-                    className="w-full px-6 py-4 bg-zinc-50 border border-zinc-200 rounded-2xl focus:outline-none focus:ring-4 focus:ring-zinc-900/5 focus:border-zinc-900 transition-all font-medium"
-                    placeholder="e.g. Stanford University"
+                    className="ouro-input"
+                    placeholder="e.g. STANFORD UNIVERSITY"
                     value={formData.university}
                     onChange={(e) => setFormData({ ...formData, university: e.target.value })}
                   />
                 </div>
-                <div>
-                  <label className="block text-xs font-bold uppercase tracking-widest text-zinc-400 mb-3">Major / Degree</label>
+                <div className="group">
+                  <label className="block text-[10px] font-mono font-bold uppercase tracking-widest text-zinc-400 mb-4 ml-1 group-focus-within:text-zinc-900 transition-colors">Major / Degree</label>
                   <input 
-                    className="w-full px-6 py-4 bg-zinc-50 border border-zinc-200 rounded-2xl focus:outline-none focus:ring-4 focus:ring-zinc-900/5 focus:border-zinc-900 transition-all font-medium"
-                    placeholder="e.g. Business Administration"
+                    className="ouro-input"
+                    placeholder="e.g. BUSINESS ADMINISTRATION"
                     value={formData.major}
                     onChange={(e) => setFormData({ ...formData, major: e.target.value })}
                   />
                 </div>
-              </>
+              </div>
             )}
 
             {step === 1 && (
-              <>
-                <div>
-                  <label className="block text-xs font-bold uppercase tracking-widest text-zinc-400 mb-3">Career Goals</label>
+              <div className="space-y-8">
+                <div className="group">
+                  <label className="block text-[10px] font-mono font-bold uppercase tracking-widest text-zinc-400 mb-4 ml-1 group-focus-within:text-zinc-900 transition-colors">Career Goals</label>
                   <textarea 
-                    className="w-full px-6 py-4 bg-zinc-50 border border-zinc-200 rounded-2xl focus:outline-none focus:ring-4 focus:ring-zinc-900/5 focus:border-zinc-900 transition-all font-medium min-h-[120px]"
+                    className="ouro-input min-h-[140px] resize-none"
                     placeholder="Where do you see yourself in 5 years?"
                     value={formData.futureCareerGoals}
                     onChange={(e) => setFormData({ ...formData, futureCareerGoals: e.target.value })}
                   />
                 </div>
-                <div>
-                  <label className="block text-xs font-bold uppercase tracking-widest text-zinc-400 mb-3">Preferred Industries (Comma separated)</label>
+                <div className="group">
+                  <label className="block text-[10px] font-mono font-bold uppercase tracking-widest text-zinc-400 mb-4 ml-1 group-focus-within:text-zinc-900 transition-colors">Preferred Industries</label>
                   <input 
-                    className="w-full px-6 py-4 bg-zinc-50 border border-zinc-200 rounded-2xl focus:outline-none focus:ring-4 focus:ring-zinc-900/5 focus:border-zinc-900 transition-all font-medium"
-                    placeholder="Fintech, AI, Green Energy..."
+                    className="ouro-input"
+                    placeholder="FINTECH, AI, GREEN ENERGY..."
                     value={formData.preferredIndustries}
                     onChange={(e) => setFormData({ ...formData, preferredIndustries: e.target.value })}
                   />
                 </div>
-              </>
+              </div>
             )}
 
             {step === 2 && (
-              <>
-                <div>
-                  <label className="block text-xs font-bold uppercase tracking-widest text-zinc-400 mb-3">Startup Interests</label>
+              <div className="space-y-8">
+                <div className="group">
+                  <label className="block text-[10px] font-mono font-bold uppercase tracking-widest text-zinc-400 mb-4 ml-1 group-focus-within:text-zinc-900 transition-colors">Startup Interests</label>
                   <input 
-                    className="w-full px-6 py-4 bg-zinc-50 border border-zinc-200 rounded-2xl focus:outline-none focus:ring-4 focus:ring-zinc-900/5 focus:border-zinc-900 transition-all font-medium"
-                    placeholder="SaaS, E-commerce, Deep Tech..."
+                    className="ouro-input"
+                    placeholder="SAAS, E-COMMERCE, DEEP TECH..."
                     value={formData.startupInterests}
                     onChange={(e) => setFormData({ ...formData, startupInterests: e.target.value })}
                   />
                 </div>
-                <div>
-                  <label className="block text-xs font-bold uppercase tracking-widest text-zinc-400 mb-3">Interests & Hobbies</label>
+                <div className="group">
+                  <label className="block text-[10px] font-mono font-bold uppercase tracking-widest text-zinc-400 mb-4 ml-1 group-focus-within:text-zinc-900 transition-colors">Interests & Hobbies</label>
                   <input 
-                    className="w-full px-6 py-4 bg-zinc-50 border border-zinc-200 rounded-2xl focus:outline-none focus:ring-4 focus:ring-zinc-900/5 focus:border-zinc-900 transition-all font-medium"
-                    placeholder="Philosophy, Crypto, Chess..."
+                    className="ouro-input"
+                    placeholder="PHILOSOPHY, CRYPTO, CHESS..."
                     value={formData.interests}
                     onChange={(e) => setFormData({ ...formData, interests: e.target.value })}
                   />
                 </div>
-              </>
+              </div>
             )}
           </div>
 
-          <div className="flex justify-between mt-12 pt-8 border-t border-zinc-100">
+          <div className="flex justify-between mt-12 pt-10 border-t border-zinc-100/50">
             <button 
               onClick={handleBack}
               disabled={step === 0}
-              className="px-6 py-3 rounded-xl text-zinc-400 font-semibold flex items-center gap-2 hover:bg-zinc-50 disabled:opacity-0 transition-all"
+              className="px-8 py-3 rounded-2xl text-[10px] font-mono font-bold uppercase tracking-widest text-zinc-400 flex items-center gap-3 hover:bg-zinc-50 hover:text-zinc-900 disabled:opacity-0 transition-all"
             >
-              <ChevronLeft className="w-5 h-5" /> Back
+              <ChevronLeft className="w-5 h-5" /> Prev Phase
             </button>
             <button 
               onClick={handleNext}
-              className="px-8 py-3 bg-zinc-900 text-white rounded-xl font-bold flex items-center gap-2 hover:bg-zinc-800 shadow-xl shadow-zinc-900/10 transition-all"
+              className="ouro-button h-14 px-10 text-[10px] tracking-[0.2em]"
             >
-              {step === STEPS.length - 1 ? 'Initialize FounderOS' : 'Continue'}
+              {step === STEPS.length - 1 ? 'INITIALIZE FOUNDEROS' : 'NEXT PHASE'}
               <ChevronRight className="w-5 h-5" />
             </button>
           </div>
@@ -211,4 +226,5 @@ export default function Onboarding() {
       </div>
     </div>
   );
+
 }

@@ -119,7 +119,7 @@ export default function IdeaVault() {
     <div className="flex-1 ml-72 p-10 bg-zinc-50 font-sans min-h-screen">
       <header className="flex justify-between items-center mb-12">
         <div>
-          <h1 className="text-4xl font-display font-bold text-zinc-900 mb-2">Venture Vault</h1>
+          <h1 className="text-4xl font-display font-medium text-zinc-900 mb-2 tracking-tighter">Venture <span className="font-serif italic font-bold">Vault</span></h1>
           <p className="text-zinc-500 font-medium tracking-tight">Incubating intellectual leverage into market dominance.</p>
         </div>
         <button 
@@ -179,7 +179,7 @@ export default function IdeaVault() {
                   <ArrowUpRight className="w-5 h-5 text-zinc-300 group-hover:text-white/50" />
                 </div>
               </div>
-              <h3 className="text-xl font-display font-bold mb-4">{idea.title}</h3>
+              <h3 className="text-xl font-display font-bold mb-4 tracking-tight">{idea.title}</h3>
               <p className="text-xs text-zinc-500 group-hover:text-zinc-400 leading-relaxed font-medium line-clamp-3 mb-8 italic">
                 "{idea.problem}"
               </p>
