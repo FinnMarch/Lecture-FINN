@@ -285,9 +285,9 @@ export default function NoteSystem() {
                       e.stopPropagation();
                       handleDelete(note.id);
                     }}
-                    className="absolute right-4 top-4 p-2 rounded-xl opacity-0 group-hover:opacity-100 hover:bg-red-500/10 hover:text-red-500 transition-all z-20"
+                    className="absolute right-2 top-2 p-4 rounded-xl opacity-0 group-hover:opacity-100 hover:bg-red-500/10 hover:text-red-500 transition-all z-20"
                   >
-                    <Trash2 className="w-3.5 h-3.5" />
+                    <Trash2 className="w-4 h-4" />
                   </button>
                 </motion.div>
               );

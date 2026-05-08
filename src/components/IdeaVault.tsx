@@ -172,9 +172,9 @@ export default function IdeaVault() {
                 <div className="flex gap-2">
                   <button 
                     onClick={(e) => handleDelete(idea.id, e)}
-                    className="p-2 text-zinc-300 hover:text-red-500 transition-colors opacity-0 group-hover:opacity-100"
+                    className="p-4 -m-2 text-zinc-300 hover:text-red-500 transition-all opacity-0 group-hover:opacity-100"
                   >
-                    <Trash2 className="w-4 h-4" />
+                    <Trash2 className="w-5 h-5" />
                   </button>
                   <ArrowUpRight className="w-5 h-5 text-zinc-300 group-hover:text-white/50" />
                 </div>

@@ -8,8 +8,8 @@ export default function VisualLayer() {
   
   const cursorSize = 8;
   const springConfig = { damping: 20, stiffness: 200, mass: 0.5 };
-  const cursorX = useSpring(mouseX, springConfig);
-  const cursorY = useSpring(mouseY, springConfig);
+  const cursorX = mouseX;
+  const cursorY = mouseY;
   const ringX = useSpring(mouseX, { damping: 30, stiffness: 150 });
   const ringY = useSpring(mouseY, { damping: 30, stiffness: 150 });
 

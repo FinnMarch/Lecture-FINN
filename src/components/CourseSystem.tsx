@@ -113,9 +113,9 @@ export default function CourseSystem() {
                 </div>
                 <button 
                   onClick={(e) => handleDelete(course.id, e)}
-                  className="p-2 text-zinc-300 hover:text-red-500 transition-colors opacity-0 group-hover:opacity-100"
+                  className="p-4 -m-2 text-zinc-300 hover:text-red-500 transition-all opacity-0 group-hover:opacity-100"
                 >
-                  <Trash2 className="w-4 h-4" />
+                  <Trash2 className="w-5 h-5" />
                 </button>
               </div>
 
